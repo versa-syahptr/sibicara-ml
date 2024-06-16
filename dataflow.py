@@ -17,6 +17,15 @@ detector = mp_hands.Hands(model_complexity=0,
 
 atexit.register(detector.close)
 
+
+default_augmenter = tf.keras.Sequential([
+    tf.keras.Input(shape=(None, None, 3)),
+    tf.keras.layers.RandomRotation(0.1),
+    tf.keras.layers.RandomZoom(0.2),
+    tf.keras.layers.RandomTranslation(0.1, 0.1)
+], name="default_augmenter")
+
+
 @tf.py_function(Tout=tf.uint8)
 def load_image(image_path):
     """
@@ -30,6 +39,12 @@ def load_image(image_path):
     """
     img = tf.io.read_file(image_path)
     img = tf.io.decode_image(img)
+    return img
+
+
+def map_path_to_image(image_path):
+    img = load_image(image_path)
+    img.set_shape((None, None, 3))
     return img
 
 
@@ -76,12 +91,14 @@ def image_dataset_from_directory(directory, class_names=None, shuffle=True, seed
     image_label_pairs = list(generate_image_label_pairs(directory, class_names))
     image_paths, labels = zip(*image_label_pairs)
 
+    print(f"Found {len(image_paths)} files belonging to {len(class_names)} classes.")
+
     # Create a tf.data.Dataset from the image paths and labels
     path_ds = tf.data.Dataset.from_tensor_slices(list(image_paths))
     label_ds = tf.data.Dataset.from_tensor_slices(list(labels))
 
     # Map the image paths to actual images
-    image_ds = path_ds.map(load_image)
+    image_ds = path_ds.map(map_path_to_image, num_parallel_calls=tf.data.AUTOTUNE)
 
     # Zip the image and label datasets together
     dataset = tf.data.Dataset.zip((image_ds, label_ds))
@@ -94,12 +111,8 @@ def image_dataset_from_directory(directory, class_names=None, shuffle=True, seed
 def landmark_dataset_generator(
         directory: os.PathLike,
         batch_size: int = 32,
-        # image_size: tuple[int, int] = (256, 256),
         shuffle: bool = True,
         seed: int = 42,
-        label_mode: str = 'int',
-        # validation_split: float = None,
-        # augmentation parameters
         augmenter: tf.keras.Sequential = None,
 ):
     # IMAGE DATASET
