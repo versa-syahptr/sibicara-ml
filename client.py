@@ -10,17 +10,16 @@ import random
 import mpipe
 import utils
 
-files = glob.glob("landmarks\*\*.csv")
 
 async def main():
-    uri = "ws://localhost:8000/ws"
+    uri = "ws://localhost:8000/predict"
     async with websockets.connect(uri) as websocket:
         # file = random.choice(files)
         # print(file)
         # data = pd.read_csv(file).to_dict('records')
         for landmark in mpipe.generate_stream():
-            data = utils.landmark2records(landmark)
-            await websocket.send(json.dumps(data))
+            data = utils.Landmark.from_legacy_mp_result(landmark)
+            await websocket.send(data.to_json())
             result = await websocket.recv()
             print(f">>> {result}")
 

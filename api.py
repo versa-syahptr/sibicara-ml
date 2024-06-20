@@ -3,26 +3,28 @@ from predictor import Predictor
 import asyncio
 import string
 import random
+from utils import Landmark
 
 
 app = FastAPI()
 
-predictor = Predictor("modelSIBI.h5")
+predictor = Predictor("saved_model")
 
 @app.get("/")
 async def read_root():
     return {"Hello": "World"}
 
 
-@app.websocket("/ws")
+@app.websocket("/predict")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     while True:
         try:
             data = await websocket.receive_json()
             # TODO parse data
-            asyncio.sleep(0.5)
-            result, conf = random.choice(string.ascii_uppercase), random.random()
+            landmark = Landmark.from_dict(data)
+            array = landmark.numpy()
+            result, conf = predictor.predict(array)
             await websocket.send_text(f"{result} ({conf*100:.2f}%)")
         except ValueError:
             await websocket.send_text('Error')
