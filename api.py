@@ -9,6 +9,10 @@ app = FastAPI()
 
 predictor = Predictor("modelSIBI.h5")
 
+@app.get("/")
+async def read_root():
+    return {"Hello": "World"}
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
