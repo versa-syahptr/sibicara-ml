@@ -12,7 +12,7 @@ import utils
 
 
 async def main():
-    uri = "ws://localhost:8000/predict"
+    uri = "wss://sibicara-ml-7ihdb2vtkq-et.a.run.app/predict"
     async with websockets.connect(uri) as websocket:
         # file = random.choice(files)
         # print(file)

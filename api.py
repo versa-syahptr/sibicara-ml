@@ -1,19 +1,18 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from predictor import Predictor
-import asyncio
-import string
-import random
 from utils import Landmark
 
 
 app = FastAPI()
+app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 
 predictor = Predictor("saved_model")
 
 @app.get("/")
 async def read_root():
-    return {"Hello": "World"}
-
+    return FileResponse('frontend/index.html')
 
 @app.websocket("/predict")
 async def websocket_endpoint(websocket: WebSocket):
